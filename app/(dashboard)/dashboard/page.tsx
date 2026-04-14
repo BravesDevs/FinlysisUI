@@ -38,8 +38,8 @@ export default function DashboardPage() {
 
         {/* Row 2: Spending by Category + Merchant Concentration */}
         <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-          <SpendingByCategoryChart />
-          <MerchantConcentrationChart />
+          {/* <SpendingByCategoryChart /> */}
+          {/* <MerchantConcentrationChart /> */}
         </div>
 
         {/* Row 3: Recurring vs One-off + Burn Rate + Currency Exposure */}
