@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { Bodoni_Moda, Inter, JetBrains_Mono } from 'next/font/google';
+import { Providers } from '@/app/providers';
 import { AuthProvider } from '@/lib/auth-context';
 import './globals.css';
 
@@ -37,7 +38,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       className={`${bodoniModa.variable} ${inter.variable} ${jetbrainsMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
-        <AuthProvider>{children}</AuthProvider>
+        <Providers>
+          <AuthProvider>{children}</AuthProvider>
+        </Providers>
       </body>
     </html>
   );

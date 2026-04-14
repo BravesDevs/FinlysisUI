@@ -1,7 +1,7 @@
-const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3000';
+import axios, { type AxiosError } from 'axios';
 
 // ---------------------------------------------------------------------------
-// Error
+// ApiError — kept for compatibility with auth-form.tsx error handling
 // ---------------------------------------------------------------------------
 
 export class ApiError extends Error {
@@ -15,106 +15,143 @@ export class ApiError extends Error {
   }
 }
 
-// ---------------------------------------------------------------------------
-// Core fetch wrapper
-// ---------------------------------------------------------------------------
-
-async function apiFetch<T>(
-  path: string,
-  init: Omit<RequestInit, 'headers'> & {
-    headers?: Record<string, string>;
-    token?: string;
-  } = {},
-): Promise<T> {
-  const { token, headers: extraHeaders, ...rest } = init;
-
-  const headers: Record<string, string> = {
-    'Content-Type': 'application/json',
-    ...extraHeaders,
-  };
-
-  if (token) {
-    headers['Authorization'] = `Bearer ${token}`;
+function toApiError(err: unknown): ApiError {
+  if (axios.isAxiosError(err)) {
+    const status = err.response?.status ?? 0;
+    const raw = (err.response?.data as { message?: string | string[] } | undefined)?.message;
+    const message = Array.isArray(raw) ? raw.join(', ') : (raw ?? err.message);
+    return new ApiError(status, message, err.response?.data);
   }
+  return new ApiError(0, 'Network error');
+}
 
-  const res = await fetch(`${API_BASE}${path}`, { ...rest, headers });
+// ---------------------------------------------------------------------------
+// Axios instance
+// ---------------------------------------------------------------------------
 
-  if (!res.ok) {
-    const body = await res.json().catch(() => null);
-    const raw = (body as { message?: string | string[] } | null)?.message;
-    const message = Array.isArray(raw) ? raw.join(', ') : (raw ?? res.statusText);
-    throw new ApiError(res.status, message, body);
+export const api = axios.create({
+  baseURL: process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3000',
+  headers: { 'Content-Type': 'application/json' },
+});
+
+// ---------------------------------------------------------------------------
+// Request interceptor — attach access token from Zustand store
+// Lazy import avoids circular deps and SSR issues
+// ---------------------------------------------------------------------------
+
+api.interceptors.request.use((config) => {
+  if (typeof window !== 'undefined') {
+    // Dynamic require to avoid SSR module evaluation of sessionStorage
+    const { useAuthStore } = require('@/store/auth.store') as typeof import('@/store/auth.store');
+    const token = useAuthStore.getState().accessToken;
+    if (token && !config.headers['Authorization']) {
+      config.headers['Authorization'] = `Bearer ${token}`;
+    }
   }
-
-  const ct = res.headers.get('content-type') ?? '';
-  if (!ct.includes('application/json')) return null as T;
-
-  return res.json() as Promise<T>;
-}
+  return config;
+});
 
 // ---------------------------------------------------------------------------
-// Shared types
+// Response interceptor — transparent 401 → refresh → retry
 // ---------------------------------------------------------------------------
 
-export interface TokensResponse {
-  access_token: string;
-  refresh_token: string;
+let isRefreshing = false;
+let failedQueue: Array<{ resolve: (token: string) => void; reject: (err: unknown) => void }> = [];
+
+function drainQueue(err: unknown, token: string | null) {
+  failedQueue.forEach((p) => (err ? p.reject(err) : p.resolve(token!)));
+  failedQueue = [];
 }
 
-export interface RegisterDto {
-  email: string;
-  password: string;
-  confirmPassword: string;
-  firstName: string;
-  lastName: string;
-  phone?: string;
-}
+api.interceptors.response.use(
+  (res) => res,
+  async (error: AxiosError) => {
+    const original = error.config as typeof error.config & { _retry?: boolean };
 
-export interface LoginDto {
-  email: string;
-  password: string;
-}
+    const is401 =
+      error.response?.status === 401 &&
+      !original?._retry &&
+      !original?.url?.includes('/auth/refresh');
 
-export interface SafeUser {
-  id: string;
-  email: string;
-  firstName: string;
-  lastName: string;
-  phone: string | null;
-  dateOfBirth: string | null;
-  preferredCurrencyId: string | null;
-  isEmailVerified: boolean;
-  lastLoginAt: string | null;
-  role: 'USER' | 'ADMIN' | 'ANALYST';
-  createdAt: string;
-  updatedAt: string;
-  deletedAt: string | null;
-}
+    if (!is401) return Promise.reject(error);
+
+    if (isRefreshing) {
+      return new Promise<string>((resolve, reject) => {
+        failedQueue.push({ resolve, reject });
+      }).then((token) => {
+        original!.headers!['Authorization'] = `Bearer ${token}`;
+        return api(original!);
+      });
+    }
+
+    original!._retry = true;
+    isRefreshing = true;
+
+    if (typeof window === 'undefined') return Promise.reject(error);
+
+    const { useAuthStore } = require('@/store/auth.store') as typeof import('@/store/auth.store');
+    const { refreshToken, setTokens, clearAuth } = useAuthStore.getState();
+
+    if (!refreshToken) {
+      clearAuth();
+      window.location.href = '/login';
+      return Promise.reject(error);
+    }
+
+    try {
+      const base = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3000';
+      const res = await axios.post<{ access_token: string; refresh_token: string }>(
+        `${base}/auth/refresh`,
+        {},
+        { headers: { Authorization: `Bearer ${refreshToken}` } },
+      );
+      const { access_token, refresh_token } = res.data;
+      setTokens(access_token, refresh_token);
+      drainQueue(null, access_token);
+      original!.headers!['Authorization'] = `Bearer ${access_token}`;
+      return api(original!);
+    } catch (refreshErr) {
+      drainQueue(refreshErr, null);
+      clearAuth();
+      window.location.href = '/login';
+      return Promise.reject(refreshErr);
+    } finally {
+      isRefreshing = false;
+    }
+  },
+);
 
 // ---------------------------------------------------------------------------
-// API namespaces
+// Typed API helpers (auth-context and auth-form depend on these)
 // ---------------------------------------------------------------------------
+
+export interface TokensResponse  { access_token: string; refresh_token: string; }
+export interface RegisterDto     { email: string; password: string; confirmPassword: string; firstName: string; lastName: string; phone?: string; }
+export interface LoginDto        { email: string; password: string; }
+export interface SafeUser        { id: string; email: string; firstName: string; lastName: string; phone: string | null; dateOfBirth: string | null; preferredCurrencyId: string | null; isEmailVerified: boolean; lastLoginAt: string | null; role: 'USER' | 'ADMIN' | 'ANALYST'; createdAt: string; updatedAt: string; deletedAt: string | null; }
 
 export const authApi = {
-  register: (dto: RegisterDto) =>
-    apiFetch<TokensResponse>('/auth/register', {
-      method: 'POST',
-      body: JSON.stringify(dto),
-    }),
-
-  login: (dto: LoginDto) =>
-    apiFetch<TokensResponse>('/auth/login', {
-      method: 'POST',
-      body: JSON.stringify(dto),
-    }),
-
-  refresh: (refreshToken: string) =>
-    apiFetch<TokensResponse>('/auth/refresh', {
-      method: 'POST',
-      headers: { Authorization: `Bearer ${refreshToken}` },
-    }),
+  register: async (dto: RegisterDto): Promise<TokensResponse> => {
+    try { return (await api.post<TokensResponse>('/auth/register', dto)).data; }
+    catch (e) { throw toApiError(e); }
+  },
+  login: async (dto: LoginDto): Promise<TokensResponse> => {
+    try { return (await api.post<TokensResponse>('/auth/login', dto)).data; }
+    catch (e) { throw toApiError(e); }
+  },
+  refresh: async (refreshToken: string): Promise<TokensResponse> => {
+    try {
+      return (await api.post<TokensResponse>('/auth/refresh', {}, {
+        headers: { Authorization: `Bearer ${refreshToken}` },
+      })).data;
+    } catch (e) { throw toApiError(e); }
+  },
 };
 
 export const usersApi = {
-  me: (token: string) => apiFetch<SafeUser>('/users/me', { token }),
+  // Token is automatically attached by the request interceptor
+  me: async (): Promise<SafeUser> => {
+    try { return (await api.get<SafeUser>('/users/me')).data; }
+    catch (e) { throw toApiError(e); }
+  },
 };

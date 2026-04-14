@@ -8,36 +8,20 @@ import {
   useState,
   type ReactNode,
 } from 'react';
-import {
-  authApi,
-  usersApi,
-  type LoginDto,
-  type RegisterDto,
-  type SafeUser,
-} from '@/lib/api';
-
-const RT_KEY = 'finlysis_rt';
+import { useAuthStore } from '@/store/auth.store';
+import { authApi, usersApi, type LoginDto, type RegisterDto } from '@/lib/api';
 
 // ---------------------------------------------------------------------------
-// Types
+// Context contract — same public interface as before so auth-form.tsx is unchanged
 // ---------------------------------------------------------------------------
 
-interface AuthState {
-  user: SafeUser | null;
-  accessToken: string | null;
-  isLoading: boolean;
-}
-
-interface AuthContextValue extends AuthState {
+interface AuthContextValue {
   isAuthenticated: boolean;
-  login: (dto: LoginDto) => Promise<void>;
+  isLoading: boolean;
+  login:    (dto: LoginDto)    => Promise<void>;
   register: (dto: RegisterDto) => Promise<void>;
-  logout: () => void;
+  logout:   () => void;
 }
-
-// ---------------------------------------------------------------------------
-// Context
-// ---------------------------------------------------------------------------
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
@@ -46,63 +30,51 @@ const AuthContext = createContext<AuthContextValue | null>(null);
 // ---------------------------------------------------------------------------
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [state, setState] = useState<AuthState>({
-    user: null,
-    accessToken: null,
-    isLoading: true,
-  });
+  const { isAuth, refreshToken, setTokens, setUser, clearAuth } = useAuthStore();
+  const [isLoading, setIsLoading] = useState(true);
 
-  const applySession = useCallback(
-    async (accessToken: string, refreshToken: string) => {
-      localStorage.setItem(RT_KEY, refreshToken);
-      const user = await usersApi.me(accessToken);
-      setState({ user, accessToken, isLoading: false });
-    },
-    [],
-  );
-
-  // Restore session from stored refresh token on mount
+  // Restore session on mount — if sessionStorage has a refresh token,
+  // call /users/me (Axios interceptor will refresh the access token on 401)
   useEffect(() => {
-    const rt = localStorage.getItem(RT_KEY);
-    if (!rt) {
-      setState((s) => ({ ...s, isLoading: false }));
+    if (!refreshToken) {
+      setIsLoading(false);
       return;
     }
 
-    authApi
-      .refresh(rt)
-      .then((tokens) => applySession(tokens.access_token, tokens.refresh_token))
-      .catch(() => {
-        localStorage.removeItem(RT_KEY);
-        setState((s) => ({ ...s, isLoading: false }));
-      });
-  }, [applySession]);
+    usersApi
+      .me()
+      .then((u) =>
+        setUser({ userId: u.id, email: u.email, firstName: u.firstName, lastName: u.lastName }),
+      )
+      .catch(() => clearAuth())
+      .finally(() => setIsLoading(false));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // intentionally runs once on mount
 
   const login = useCallback(
     async (dto: LoginDto) => {
       const tokens = await authApi.login(dto);
-      await applySession(tokens.access_token, tokens.refresh_token);
+      setTokens(tokens.access_token, tokens.refresh_token);
+      const u = await usersApi.me();
+      setUser({ userId: u.id, email: u.email, firstName: u.firstName, lastName: u.lastName });
     },
-    [applySession],
+    [setTokens, setUser],
   );
 
   const register = useCallback(
     async (dto: RegisterDto) => {
       const tokens = await authApi.register(dto);
-      await applySession(tokens.access_token, tokens.refresh_token);
+      setTokens(tokens.access_token, tokens.refresh_token);
+      const u = await usersApi.me();
+      setUser({ userId: u.id, email: u.email, firstName: u.firstName, lastName: u.lastName });
     },
-    [applySession],
+    [setTokens, setUser],
   );
 
-  const logout = useCallback(() => {
-    localStorage.removeItem(RT_KEY);
-    setState({ user: null, accessToken: null, isLoading: false });
-  }, []);
+  const logout = useCallback(() => clearAuth(), [clearAuth]);
 
   return (
-    <AuthContext.Provider
-      value={{ ...state, isAuthenticated: !!state.user, login, register, logout }}
-    >
+    <AuthContext.Provider value={{ isAuthenticated: isAuth, isLoading, login, register, logout }}>
       {children}
     </AuthContext.Provider>
   );
