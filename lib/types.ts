@@ -77,6 +77,26 @@ export interface TagSummary {
   transactionCount: number;
 }
 
+// ── Plaid ────────────────────────────────────────────────────────────────────
+
+export type PlaidItemStatus = 'ACTIVE' | 'EXPIRED' | 'REVOKED' | 'ERROR';
+
+export interface PlaidItem {
+  id: string;                       // DB UUID — use this for disconnect
+  userId: string;
+  userBankConnectionId: string | null;
+  plaidItemId: string;              // Plaid's item_id string
+  institutionId: string | null;
+  institutionName: string | null;
+  consentExpiresAt: string | null;
+  status: PlaidItemStatus;
+  lastSyncedAt: string | null;
+  errorCode: string | null;
+  createdAt: string;
+  updatedAt: string;
+  deletedAt: string | null;
+}
+
 // ── Common dashboard query params ───────────────────────────────────────────
 
 export interface DashboardParams {

@@ -1,15 +1,17 @@
+'use client';
+
 import { useQuery } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 import { useAuthStore } from '@/store/auth.store';
-import type { AccountBalancesResponse } from '@/lib/types';
+import type { PlaidItem } from '@/lib/types';
 
-export function useAccountBalances() {
+export function usePlaidItems() {
   const accessToken = useAuthStore((s) => s.accessToken);
 
   return useQuery({
-    queryKey: ['accounts', 'balances'],
+    queryKey: ['plaid', 'items'],
     queryFn: async () => {
-      const res = await api.get<AccountBalancesResponse>('/accounts/balances');
+      const res = await api.get<PlaidItem[]>('/plaid/items');
       return res.data;
     },
     enabled: !!accessToken,
