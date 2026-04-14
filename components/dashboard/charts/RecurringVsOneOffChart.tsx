@@ -72,7 +72,7 @@ export function RecurringVsOneOffChart() {
               <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: COLORS.recurring }} />
               <span className="text-[12px] font-sans text-[var(--text-muted)]">Recurring</span>
             </div>
-            <p className="font-heading font-black italic text-[1.5rem] tracking-[-0.03em] leading-none text-[var(--color-ink)]">
+            <p className="font-heading font-black not-italic text-[1.5rem] tracking-[-0.03em] leading-none text-[var(--color-ink)]">
               {CAD.format(recurringAmt)}
             </p>
             <p className="text-[12px] text-[var(--text-muted)] mt-0.5">{recurringPct}% of total</p>
@@ -85,7 +85,7 @@ export function RecurringVsOneOffChart() {
               <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: COLORS.oneOff }} />
               <span className="text-[12px] font-sans text-[var(--text-muted)]">One-off</span>
             </div>
-            <p className="font-heading font-black italic text-[1.5rem] tracking-[-0.03em] leading-none text-[var(--color-ink)]">
+            <p className="font-heading font-black not-italic text-[1.5rem] tracking-[-0.03em] leading-none text-[var(--color-ink)]">
               {CAD.format(oneOffAmt)}
             </p>
             <p className="text-[12px] text-[var(--text-muted)] mt-0.5">{oneOffPct}% of total</p>

@@ -36,8 +36,8 @@ export function MetricCard({
       {/* Label — Inter 500 12px uppercase per spec */}
       <p className="type-table-header mb-3">{label}</p>
 
-      {/* Value — Bodoni Moda 900 italic 36px per spec */}
-      <p className="font-heading font-black italic text-[2.25rem] tracking-[-0.03em] leading-none text-[var(--color-ink)]">
+      {/* Value — Bodoni Moda 900 normal 36px */}
+      <p className="font-heading font-black not-italic text-[2.25rem] tracking-[-0.03em] leading-none text-[var(--color-ink)]">
         {value}
       </p>
 

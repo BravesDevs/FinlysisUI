@@ -32,7 +32,7 @@ function GaugeArc({ pct }: { pct: number }) {
         style={{ transition: 'stroke-dasharray 0.6s ease' }}
       />
       {/* Center pct label */}
-      <text x="100" y="92" textAnchor="middle" fontSize={22} fontFamily="var(--font-bodoni)" fontWeight={900} fontStyle="italic" fill="var(--color-ink)">
+      <text x="100" y="92" textAnchor="middle" fontSize={22} fontFamily="var(--font-bodoni), Georgia, 'Times New Roman', serif" fontWeight={900} fontStyle="normal" fill="var(--color-ink)">
         {Math.round(pct * 100)}%
       </text>
       <text x="100" y="108" textAnchor="middle" fontSize={10} fontFamily="var(--font-inter)" fill="var(--text-muted)">
@@ -62,14 +62,14 @@ export function BurnRateChart() {
         <div className="flex gap-6 text-center">
           <div>
             <p className="type-ui-label text-[var(--text-muted)]">This Month</p>
-            <p className="font-heading font-black italic text-[1.25rem] tracking-[-0.03em] leading-none text-[var(--color-ink)] mt-1">
+            <p className="font-heading font-black not-italic text-[1.25rem] tracking-[-0.03em] leading-none text-[var(--color-ink)] mt-1">
               {CAD.format(Math.abs(data?.currentMonthSpend ?? 0))}
             </p>
           </div>
           <div className="w-px bg-[color:var(--border)]" />
           <div>
             <p className="type-ui-label text-[var(--text-muted)]">3-Mo Avg</p>
-            <p className="font-heading font-black italic text-[1.25rem] tracking-[-0.03em] leading-none text-[var(--color-ink)] mt-1">
+            <p className="font-heading font-black not-italic text-[1.25rem] tracking-[-0.03em] leading-none text-[var(--color-ink)] mt-1">
               {CAD.format(Math.abs(data?.avgPrevThreeMonths ?? 0))}
             </p>
           </div>

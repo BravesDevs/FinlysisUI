@@ -173,21 +173,21 @@
     letter-spacing: -0.01em;
     line-height: 1.3;
   }
-  /* Metric values — italic only on dashboard metric cards, not on auth pages */
+  /* Metric values — Bodoni Moda 900 upright for dashboard metric cards */
   .type-display-number {
-    font-family: var(--font-bodoni), Georgia, serif;
+    font-family: var(--font-bodoni), Georgia, 'Times New Roman', serif;
     font-weight: 900;
     font-size: 2.25rem;
-    font-style: italic;
+    font-style: normal;
     letter-spacing: -0.03em;
     color: var(--color-ink);
     line-height: 1.1;
   }
-  /* Accent callouts — italic only on chart legends, badges, not on auth pages */
+  /* Accent callouts — Bodoni Moda 400 upright for chart legends, badges */
   .type-accent {
-    font-family: var(--font-bodoni), Georgia, serif;
+    font-family: var(--font-bodoni), Georgia, 'Times New Roman', serif;
     font-weight: 400;
-    font-style: italic;
+    font-style: normal;
     font-size: 0.875rem;
     color: var(--color-deep);
   }
