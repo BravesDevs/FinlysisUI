@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { Bodoni_Moda, Inter, JetBrains_Mono } from 'next/font/google';
 import { Providers } from '@/app/providers';
 import { AuthProvider } from '@/lib/auth-context';
+import { TooltipProvider } from '@/components/ui/tooltip';
 import './globals.css';
 
 const bodoniModa = Bodoni_Moda({
@@ -39,7 +40,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     >
       <body className="min-h-full flex flex-col">
         <Providers>
-          <AuthProvider>{children}</AuthProvider>
+          <TooltipProvider>
+            <AuthProvider>{children}</AuthProvider>
+          </TooltipProvider>
         </Providers>
       </body>
     </html>

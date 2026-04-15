@@ -97,6 +97,36 @@ export interface PlaidItem {
   deletedAt: string | null;
 }
 
+// ── Import ───────────────────────────────────────────────────────────────────
+
+export type ImportStatus = 'PENDING' | 'PROCESSING' | 'COMPLETED' | 'FAILED';
+
+export interface ImportBatch {
+  id: string;
+  fileName: string;
+  status: ImportStatus;
+  rowCount: number;
+  successCount: number;
+  skippedCount: number;
+  errorCount: number;
+  completedAt: string | null;
+  startedAt: string;
+  bankAccountId: string;
+  importSourceId: string;
+  fileSizeBytes: number;
+  fileUploadStatus: 'PENDING' | 'UPLOADED' | 'FAILED' | null;
+  fileUrl: string | null;
+}
+
+export interface ImportBatchDetail extends ImportBatch {
+  userId: string;
+  fileSizeBytes: number;
+  fileUploadError: string | null;
+  createdAt: string;
+  updatedAt: string;
+  errorLog: Array<{ row: number; reason: string; raw?: Record<string, string> }> | null;
+}
+
 // ── Common dashboard query params ───────────────────────────────────────────
 
 export interface DashboardParams {
