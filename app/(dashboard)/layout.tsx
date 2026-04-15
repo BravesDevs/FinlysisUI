@@ -7,7 +7,7 @@ import Link from 'next/link';
 
 const NAV_ITEMS = [
   { href: '/dashboard',     label: 'Dashboard' },
-  { href: '/transactions',  label: 'Transactions' },
+  { href: '/transactions',  label: 'Passbook' },
   { href: '/accounts',      label: 'Accounts' },
   { href: '/import',        label: 'Import' },
   { href: '/profile',       label: 'Profile' },

@@ -78,7 +78,7 @@ export function ImportDrawer({ open, onOpenChange }: Props) {
 
   return (
     <Sheet open={open} onOpenChange={(v) => { if (!v) handleClose(); }}>
-      <SheetContent side="right" className="w-full sm:max-w-md flex flex-col">
+      <SheetContent side="right" className="w-full sm:max-w-[520px] flex flex-col">
         <SheetHeader className="pb-4 border-b border-[color:var(--border)]">
           <SheetTitle
             className="text-[15px] font-semibold font-sans text-[var(--text-primary)]"
@@ -94,7 +94,7 @@ export function ImportDrawer({ open, onOpenChange }: Props) {
           </p>
         </SheetHeader>
 
-        <div className="flex-1 overflow-y-auto py-5 space-y-5">
+        <div className="flex-1 overflow-y-auto px-4 py-5 space-y-5">
           {/* Drop zone */}
           <div>
             <label
@@ -106,7 +106,7 @@ export function ImportDrawer({ open, onOpenChange }: Props) {
             <div
               {...getRootProps()}
               className={[
-                'relative flex flex-col items-center justify-center rounded-[12px] border-2 border-dashed px-6 py-10 cursor-pointer transition-colors',
+                'relative flex flex-col items-center justify-center rounded-[12px] border-2 border-dashed px-6 py-8 cursor-pointer transition-colors',
                 isDragActive
                   ? 'border-[var(--color-azure)] bg-[#f0fafd]'
                   : selectedFile
@@ -123,7 +123,7 @@ export function ImportDrawer({ open, onOpenChange }: Props) {
                       style={{ width: 20, height: 20, color: 'var(--color-azure)' }}
                     />
                     <span
-                      className="text-[14px] font-medium font-sans text-[var(--text-primary)] truncate max-w-[220px]"
+                      className="text-[14px] font-medium font-sans text-[var(--text-primary)] truncate max-w-[320px]"
                       style={{ fontStyle: 'normal' }}
                     >
                       {selectedFile.name}
@@ -134,7 +134,7 @@ export function ImportDrawer({ open, onOpenChange }: Props) {
                         e.stopPropagation();
                         setSelectedFile(null);
                       }}
-                      className="flex-shrink-0 text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors"
+                      className="ml-auto flex-shrink-0 text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors"
                     >
                       <X style={{ width: 14, height: 14 }} />
                     </button>
@@ -238,7 +238,7 @@ export function ImportDrawer({ open, onOpenChange }: Props) {
         </div>
 
         {/* Footer */}
-        <div className="flex-shrink-0 pt-4 border-t border-[color:var(--border)] flex items-center gap-3">
+        <div className="flex-shrink-0 px-4 pt-4 pb-4 border-t border-[color:var(--border)] flex items-center gap-3">
           <button
             type="button"
             onClick={handleClose}
